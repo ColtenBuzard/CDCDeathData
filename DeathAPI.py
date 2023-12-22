@@ -1,11 +1,23 @@
 from CDChelperfunctions import *
+#I built this helper function so that you can just type keywords in and not have to use codes
 
 #comment2testing commit
 
-#B - Group By Parameters
-# b_parameters = group_By('year','injuryintent','icdchapter','icdsub-chapter','causeofdeath')
+#The title of the report
+title = '2022 CDC Death Data' #Set in the O Parameters
+
+#--1. Organize table layout:----------
+#B - Group By Parameters--------------
+    # List of valid answers for the group_By function
+    # 'cregion','cdivision','hregion','state','county','2013urban','2006urban',
+    # 'age','gender','hispanicorigin','race','year','month','weekday','autopsy','placeofdeath','15leadingcauses',
+    # '15leadingcauses(infants)','icdchapter','icdsub-chapter','causeofdeath','113causelist',
+    # '130causelist(infants)','injuryintent','injurymechanism','drug/alcohol','*None*'
+b_parameters = group_By('age','injuryintent','injurymechanism','causeofdeath')
+
 
 #M - Values to measure by
+#These are the defaults. No need to change. These also appear in section 1.
 m_parameters = measures('deaths','pop','percentofdeaths')
 
 #F - Don't change these
@@ -19,7 +31,7 @@ f_parameters = {
 
 #I - parameters
 i_parameters = {
-    "I_D76.V1": "2022 2022",  # year/month
+    "I_D76.V1": "*All*",  # year/month
     "I_D76.V10": "*All* (The United States)", # Census Regions - dont change
     "I_D76.V2": "*All*", # ICD-10 Codes
     "I_D76.V27": "*All* (The United States)", # HHS Regions - dont change
@@ -62,7 +74,6 @@ v_parameters = {
 
 # For this example, include age-adjusted rates, use ten-year age groups (D76.V5), use state location by default, 
 # show rates per 100,000, use 2013 urbanization and use ICD-10 Codes (D76.V2) for cause of death category
-title = '2022 CDC Death Data'
 
 o_parameters = {
     "O_V10_fmode": "freg",    # Use regular finder and ignore v parameter value
@@ -106,7 +117,7 @@ misc_parameters = {
     "stage": "request"
 }
 
-xml_request = "\n"
+xml_request = "<request-parameters>\n"
 xml_request += createParameterList(b_parameters)
 xml_request += createParameterList(m_parameters)
 xml_request += createParameterList(f_parameters)
@@ -115,17 +126,29 @@ xml_request += createParameterList(o_parameters)
 xml_request += createParameterList(vm_parameters)
 xml_request += createParameterList(v_parameters)
 xml_request += createParameterList(misc_parameters)
-xml_request += ""
+xml_request += "</request-parameters>"
+
+print(xml_request)
 
 import requests
 
-url = "https://wonder.cdc.gov/controller/datarequest/D176"
+url = "https://wonder.cdc.gov/controller/datarequest/D158"
 response = requests.post(url, data={"request_xml": xml_request, "accept_datause_restrictions": "true"})
-
 if response.status_code == 200:
     data = response.text
 else:
-    print("something went wrong")
+    # Print status code and response text to understand what went wrong
+    print(f"Error: {response.status_code}")
+    print("Response content:", response.text)
+
+    # Optionally, you can also check for specific status codes and handle them
+    if response.status_code == 400:
+        print("Bad Request - The request was invalid or cannot be served.")
+    elif response.status_code == 401:
+        print("Unauthorized - Authentication is required and has failed or has not been provided.")
+    elif response.status_code == 403:
+        print("Forbidden - The request was a valid request, but the server is refusing to respond to it.")
+    # Add more cases as needed based on the API's documentation
 
 # BeautifulSoup library facilitates parsing of XML response
 import bs4 as bs
@@ -175,7 +198,7 @@ def xml2df(xml_data):
         row_number += 1
     return all_records
 
-# data_frame = xml2df(data)
+#    data_frame = xml2df(data)
 
 # df = pd.DataFrame(data=data_frame, columns=["Year", "Race", "Deaths", "Population", "Crude Rate", "Age-adjusted Rate", "Age-adjusted Rate Standard Error"])
 
